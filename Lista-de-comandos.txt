@@ -1,0 +1,144 @@
+==============================
+PLUS – Lista Completa de Comandos
+==============================
+
+1. HELP – Exibir ajuda
+----------------------
+./plus.sh help
+Exibe todos os comandos disponíveis e uso básico.
+
+---
+
+2. SYNC – Sincronizar pacotes
+-----------------------------
+./plus.sh sync <pacote> [url] [branch]
+- Sincroniza um pacote específico.
+- Se url não for fornecida, usa packages.list.
+- Se branch não for fornecido, usa SYNC_DEFAULT_BRANCH.
+
+./plus.sh sync all
+- Sincroniza todos os pacotes listados em packages.list.
+
+---
+
+3. BUILD – Compilar pacotes
+---------------------------
+./plus.sh build <pacote> [--destdir=<diretório>] [--no-install] [--cflags="..."] [--ldflags="..."]
+- Compila pacote isoladamente.
+- --destdir: diretório de instalação temporário.
+- --no-install: apenas build, não instala.
+- --cflags/--ldflags: sobrescreve flags globais.
+
+Exemplo:
+./plus.sh build gcc --destdir=/opt/plus/lfs-toolchain
+
+---
+
+4. INSTALL – Instalar pacotes
+------------------------------
+./plus.sh install <pacote> [--destdir=<diretório>] [--cflags="..."] [--ldflags="..."]
+- Constrói e instala o pacote.
+- Atualiza registro em var/db/installed.packages.
+- Respeita flags globais ou específicas de pacote.
+
+Exemplo:
+./plus.sh install bash --destdir=/opt/plus/lfs-toolchain
+
+---
+
+5. REMOVE – Remover pacotes
+----------------------------
+./plus.sh remove <pacote> [--force] [--undo]
+- --force: remove mesmo se outros pacotes dependem dele.
+- --undo: desfaz instalação (executa make uninstall se disponível).
+- Detecta pacotes órfãos se REMOVE_CHECK_ORPHANS=1.
+
+Exemplo:
+./plus.sh remove gcc --undo
+
+---
+
+6. UPGRADE – Atualizar pacotes
+-------------------------------
+./plus.sh upgrade <pacote> [--force] [--no-install] [--cflags="..."] [--ldflags="..."]
+- Atualiza um pacote recompilando e reinstalando.
+
+./plus.sh upgrade all
+- Atualiza todos pacotes instalados.
+
+---
+
+7. CLEAN – Limpar diretórios
+-----------------------------
+./plus.sh clean
+- Limpa workdir, sync e logs mantendo registros.
+
+Limpeza modular:
+./plus.sh clean workdir
+./plus.sh clean sync
+./plus.sh clean logs
+
+---
+
+8. SHA256 – Verificação de integridade
+---------------------------------------
+- Verificado automaticamente durante build e install se ENABLE_SHA256=1.
+- Pode ser executado manualmente:
+sha256sum workdir/src/<pacote>/<arquivo>
+
+- Arquivos .sha256 são gerados automaticamente pelo PLUS.
+
+---
+
+9. HOOKS – Scripts personalizados
+----------------------------------
+- Diretório: $PLUS_ROOT/hooks/
+- Hooks disponíveis:
+  pre-build.sh
+  post-build.sh
+  pre-install.sh
+  post-install.sh
+  pre-remove.sh
+  post-remove.sh
+  pre-sync.sh
+  post-sync.sh
+  pre-upgrade.sh
+  post-upgrade.sh
+
+- Executados automaticamente durante as ações correspondentes.
+- Exemplo de execução manual:
+$PLUS_ROOT/hooks/pre-build.sh gcc
+
+---
+
+10. OUTRAS CONFIGURAÇÕES IMPORTANTES
+------------------------------------
+- Diretórios configuráveis em plus.conf:
+  PLUS_ROOT, WORKDIR, SYNC_DIR, LOG_DIR, DB_DIR, LFS_TOOLCHAIN_DIR
+
+- Flags globais de compilação:
+  CFLAGS, CXXFLAGS, LDFLAGS
+  PACKAGE_FLAGS["<pacote>"]="<flags>"
+
+- Pacotes opcionais:
+  PACKAGE_OPTIONAL["vim"]=1
+
+---
+
+11. RESUMO RÁPIDO
+-----------------
+| Comando       | Descrição                                 |
+|---------------|-------------------------------------------|
+| help          | Exibe ajuda                               |
+| sync          | Sincroniza pacotes (um ou todos)          |
+| build         | Compila pacote sem ou com instalação      |
+| install       | Instala pacote (build + registro)         |
+| remove        | Remove pacote (--force, --undo)           |
+| upgrade       | Atualiza pacote ou sistema completo       |
+| clean         | Limpa workdir, sync e logs                |
+| SHA256        | Verificação/geração de checksum           |
+| Hooks         | Pre/Post build/install/remove/sync        |
+
+==============================
+FIM DA LISTAGEM DE COMANDOS PLUS
+==============================
