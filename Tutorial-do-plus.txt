@@ -1,0 +1,190 @@
+==============================
+PLUS - Gerenciador de Pacotes Linux
+==============================
+
+1. Estrutura de Diretórios do PLUS
+---------------------------------
+plus/
+├── plus.sh                     # Script principal do PLUS
+├── plus.conf                   # Arquivo de configuração completo
+├── packages.list               # Lista de pacotes disponíveis
+├── hooks/                      # Scripts de hooks pré/post
+│   ├── pre-build.sh
+│   ├── post-build.sh
+│   ├── pre-install.sh
+│   ├── post-install.sh
+│   ├── pre-remove.sh
+│   ├── post-remove.sh
+│   ├── pre-sync.sh
+│   └── post-sync.sh
+├── patches/                    # Diretórios com patches por pacote
+│   └── gcc/
+│       └── fix-build.patch
+├── workdir/                     # Diretório temporário de build
+│   ├── src/
+│   ├── build/
+│   └── sha256/
+├── sync/                        # Diretório de sincronização de pacotes
+│   ├── gcc/                     # Git clone ou arquivos baixados
+│   └── source_cache/
+├── logs/                        # Logs detalhados de cada operação
+└── var/
+    └── db/
+        └── installed.packages  # Registro de pacotes instalados
+
+2. Arquivo de Configuração (plus.conf)
+--------------------------------------
+# Diretórios
+PLUS_ROOT="/opt/plus"
+WORKDIR="$PLUS_ROOT/workdir"
+SYNC_DIR="$PLUS_ROOT/sync"
+LOG_DIR="$PLUS_ROOT/logs"
+DB_DIR="$PLUS_ROOT/var/db"
+
+# Compilação
+CFLAGS="-O2 -march=native"
+CXXFLAGS="-O2 -march=native"
+LDFLAGS="-Wl,-O1"
+
+# Branch padrão para Git
+SYNC_DEFAULT_BRANCH="main"
+
+# Flags específicas de pacotes
+declare -A PACKAGE_FLAGS
+PACKAGE_FLAGS["gcc"]="-O2 -fPIC"
+PACKAGE_FLAGS["vim"]="-O3 -DENABLE_FEATURE_X"
+
+# SHA256
+ENABLE_SHA256=1
+
+# Build isolado
+BUILD_ISOLATED=1
+PATCH_DIR="$WORKDIR/patches"
+
+# Logs
+LOG_VERBOSE=1
+
+# Remoção
+REMOVE_CHECK_ORPHANS=1
+REMOVE_SUPPORT_UNDO=1
+
+# Sync
+SYNC_AUTO_UPDATE=1
+SYNC_CACHE_DIR="$SYNC_DIR/source_cache"
+
+# Toolchain LFS
+LFS_TOOLCHAIN_DIR="$PLUS_ROOT/lfs-toolchain"
+USE_TOOLCHAIN=1
+
+# Hooks
+HOOKS_DIR="$PLUS_ROOT/hooks"
+
+# Pacotes opcionais
+declare -A PACKAGE_OPTIONAL
+PACKAGE_OPTIONAL["vim"]=1
+PACKAGE_OPTIONAL["nano"]=1
+PACKAGE_OPTIONAL["git"]=0
+
+3. Lista de Pacotes (packages.list)
+-----------------------------------
+# Formato: <pacote> <url> [branch]
+gcc https://github.com/gcc-mirror/gcc.git main
+vim https://github.com/vim/vim.git main
+make https://ftp.gnu.org/gnu/make/make-4.4.tar.gz
+
+4. Exemplo de Hook (hooks/pre-build.sh)
+---------------------------------------
+#!/usr/bin/env bash
+pkg="$1"
+echo "[HOOK] Pre-build for $pkg"
+
+# Tornar executável
+# chmod +x hooks/pre-build.sh
+
+5. Exemplo de Patch (patches/gcc/fix-build.patch)
+--------------------------------------------------
+# Conteúdo de exemplo de patch
+# --- gcc/src/file.c
+# +++ gcc/src/file.c
+# @@ -1,2 +1,2 @@
+# -int x = 0;
+# +int x = 1;
+
+6. Comandos de Instalação e Configuração
+----------------------------------------
+# Clonar ou copiar o PLUS
+mkdir -p /opt/plus
+cp plus.sh /opt/plus/plus.sh
+cp plus.conf /opt/plus/plus.conf
+cp -r hooks patches packages.list /opt/plus/
+
+# Tornar script executável
+chmod +x /opt/plus/plus.sh
+
+# Criar diretórios de workdir, sync e logs
+mkdir -p /opt/plus/workdir/src /opt/plus/workdir/build /opt/plus/workdir/sha256
+mkdir -p /opt/plus/sync/source_cache
+mkdir -p /opt/plus/logs
+mkdir -p /opt/plus/var/db
+
+# Rodar PLUS
+cd /opt/plus
+./plus.sh help
+
+7. Comandos de Uso
+------------------
+# Sincronizar todos pacotes
+./plus.sh sync all
+
+# Sincronizar pacote específico
+./plus.sh sync gcc https://github.com/gcc-mirror/gcc.git main
+
+# Build isolado de pacote
+./plus.sh build gcc
+
+# Instalar pacote
+./plus.sh install gcc
+
+# Remover pacote
+./plus.sh remove gcc
+
+# Upgrade pacote específico
+./plus.sh upgrade gcc
+
+# Upgrade de todos pacotes
+./plus.sh upgrade all
+
+# Limpar diretórios temporários
+./plus.sh clean
+
+8. Exemplo de Receita GCC (gcc.recipe.txt)
+------------------------------------------
+Package: gcc
+Version: master
+Source: https://github.com/gcc-mirror/gcc.git
+Dependencies:
+    - gmp
+    - mpfr
+    - mpc
+Build:
+    - extract_source <archive>
+    - apply_patches <patch_dir>
+    - ./configure --prefix=/usr/local --enable-languages=c,c++
+    - make CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS"
+    - make install DESTDIR=<destdir>
+Hooks:
+    pre-build: hooks/pre-build.sh
+    post-build: hooks/post-build.sh
+SHA256: enable
+
+9. Observações
+---------------
+- Todos os diretórios devem ser criados antes da primeira execução.
+- Patches são aplicados automaticamente se existirem em patches/<pkg>/.
+- Pacotes opcionais/recomendados podem ser controlados via PACKAGE_OPTIONAL.
+- Hooks permitem scripts customizados para cada fase.
+- SHA256 garante integridade de arquivos baixados.
+
+==============================
+FIM DO TUTORIAL PLUS
+==============================
