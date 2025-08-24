@@ -1,0 +1,169 @@
+=========================================================
+Linux From Scratch com PLUS
+=========================================================
+
+Este tutorial explica como usar o PLUS para criar um Linux From Scratch (LFS) completo.
+
+=========================================================
+1. Preparação do Ambiente
+=========================================================
+
+1.1 Requisitos do Sistema:
+- Sistema Linux existente (host)
+- Pacotes necessários no host:
+  gcc, make, bash, coreutils, wget, curl, tar, gzip, bzip2, xz, patch, git, fakeroot
+
+1.2 Criação do diretório base do LFS:
+mkdir -p /opt/plus
+cd /opt/plus
+
+1.3 Copiar o PLUS para o diretório:
+cp plus.sh /opt/plus/plus.sh
+cp plus.conf /opt/plus/plus.conf
+cp -r hooks patches packages.list /opt/plus/
+chmod +x plus.sh
+
+1.4 Criar diretórios necessários:
+mkdir -p workdir/src workdir/build workdir/sha256
+mkdir -p sync/source_cache
+mkdir -p logs
+mkdir -p var/db
+mkdir -p lfs-toolchain
+
+=========================================================
+2. Configuração do plus.conf para LFS
+=========================================================
+
+- Habilitar uso de toolchain:
+USE_TOOLCHAIN=1
+LFS_TOOLCHAIN_DIR="/opt/plus/lfs-toolchain"
+
+- Build isolado:
+BUILD_ISOLATED=1
+
+- SHA256 habilitado:
+ENABLE_SHA256=1
+
+- Diretórios de logs e workdir já criados.
+
+=========================================================
+3. Preparação do Toolchain
+=========================================================
+
+3.1 Sincronizar pacotes essenciais:
+./plus.sh sync all
+
+3.2 Instalar dependências para toolchain:
+./plus.sh install gmp
+./plus.sh install mpfr
+./plus.sh install mpc
+./plus.sh install isl
+./plus.sh install binutils
+./plus.sh install gcc
+
+3.3 Criar toolchain isolado:
+# Define PREFIX e PATH para toolchain
+export LFS=/opt/plus/lfs-toolchain
+export PATH=$LFS/bin:$PATH
+mkdir -p $LFS
+
+3.4 Build do Toolchain (exemplo GCC):
+./plus.sh build gcc --destdir=$LFS
+
+=========================================================
+4. Construção do Sistema Base
+=========================================================
+
+4.1 Criar diretórios de montagem:
+mkdir -p $LFS/{bin,boot,etc,home,lib,lib64,opt,sbin,srv,tmp,var,usr,var/tmp}
+
+4.2 Instalar pacotes básicos no LFS:
+# Exemplo:
+./plus.sh install make --destdir=$LFS
+./plus.sh install bash --destdir=$LFS
+./plus.sh install coreutils --destdir=$LFS
+./plus.sh install findutils --destdir=$LFS
+./plus.sh install grep --destdir=$LFS
+./plus.sh install sed --destdir=$LFS
+
+4.3 Configurar variáveis de compilação para o sistema LFS:
+export CFLAGS="-O2 -march=native"
+export CXXFLAGS="-O2 -march=native"
+export LDFLAGS="-Wl,-O1"
+
+4.4 Build de pacotes intermediários:
+# Exemplo: m4, ncurses, bison, flex, tar
+./plus.sh install m4 --destdir=$LFS
+./plus.sh install ncurses --destdir=$LFS
+./plus.sh install bison --destdir=$LFS
+./plus.sh install flex --destdir=$LFS
+./plus.sh install tar --destdir=$LFS
+
+=========================================================
+5. Aplicação de Patches
+=========================================================
+
+- Se algum pacote precisar de patch:
+1. Colocar patch em patches/<pacote>/fix.patch
+2. PLUS aplicará automaticamente durante o build:
+./plus.sh build <pacote> --destdir=$LFS
+
+=========================================================
+6. Configuração de Kernel e Boot
+=========================================================
+
+6.1 Baixar kernel Linux:
+./plus.sh sync linux https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git main
+
+6.2 Build e instalação do kernel:
+./plus.sh build linux --destdir=$LFS
+
+6.3 Configurar bootloader (exemplo GRUB):
+./plus.sh install grub --destdir=$LFS
+
+=========================================================
+7. Verificação de Integridade
+=========================================================
+
+- SHA256 das fontes é gerado e verificado automaticamente:
+./plus.sh build <pacote>
+# Ou manual:
+sha256sum workdir/src/<pacote>/<arquivo>
+
+=========================================================
+8. Limpeza
+=========================================================
+
+- Limpar workdir temporário:
+./plus.sh clean
+
+- Limpar sync:
+rm -rf sync/source_cache/*
+
+- Limpar logs:
+rm -rf logs/*
+
+=========================================================
+9. Testando o Sistema
+=========================================================
+
+- Chroot no LFS para testar:
+sudo chroot $LFS /bin/bash
+
+- Verificar versões dos pacotes:
+gcc --version
+bash --version
+make --version
+
+=========================================================
+10. Observações
+=========================================================
+
+- Use PACKAGE_FLAGS no plus.conf para otimizar builds específicos.
+- Use hooks para customizar pré e pós build/install/remove.
+- Dependências opcionais podem ser ignoradas ou instaladas conforme PACKAGE_OPTIONAL.
+- Sempre execute builds isolados para evitar poluição do host.
+
+=========================================================
+FIM DO TUTORIAL LFS COM PLUS
+=========================================================
